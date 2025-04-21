@@ -1,0 +1,18 @@
+version: 2
+updates:
+  - package-ecosystem: "gomod"
+    directory: "/"  # Location in repo of go.mod file
+    schedule:
+      interval: "weekly" # Options: daily, weekly, monthly
+    commit-message:
+      prefix: "Dependabot"
+    labels:
+      - "dependency-updates"
+      - "security"
+    target-branch: "main"
+    reviewers:
+      - "rvoh-emccaleb"
+    groups:
+      grouped-dependency-updates:
+        patterns:
+          - "*"
