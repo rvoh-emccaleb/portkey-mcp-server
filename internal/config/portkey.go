@@ -1,0 +1,29 @@
+package config
+
+import (
+	"errors"
+
+	"github.com/rvoh-emccaleb/portkey-mcp-server/internal/types"
+)
+
+var (
+	ErrBaseURLRequired = errors.New("base url is required")
+	ErrAPIKeyRequired  = errors.New("api key is required")
+)
+
+type Portkey struct {
+	APIKey  types.MaskedString `envconfig:"PORTKEY_API_KEY"         json:"api_key"               required:"true"`
+	BaseURL string             `default:"https://api.portkey.ai/v1" envconfig:"PORTKEY_BASE_URL" json:"base_url" required:"true"` //nolint:lll
+}
+
+func (cfg *Portkey) Validate() error {
+	if cfg.BaseURL == "" {
+		return ErrBaseURLRequired
+	}
+
+	if cfg.APIKey == "" {
+		return ErrAPIKeyRequired
+	}
+
+	return nil
+}
