@@ -1,0 +1,301 @@
+name: Main GHA Workflow
+
+on:
+  # Trigger on any push event to any branch
+  push:
+    branches:
+      - "**"
+
+  # Trigger on published releases
+  release:
+    types: [published]
+
+  # Enable manual triggering via GitHub Actions UI
+  workflow_dispatch:
+
+env:
+  BINARY_NAME: "portkey-mcp-server"
+  GO_VERSION: "1.24"
+
+  GIT_CONFIG_CMD: |
+    git config --global init.defaultBranch main
+    git config --global advice.detachedHead false
+    git config --global url."https://oauth2:${{ secrets.GITHUB_PAT }}@github.com/".insteadOf "https://github.com/"
+
+  # These names map to the output of our Makefile targets. If those change, just change these variables.
+  LINT_REPORT_NAME: "lint-report.json"
+  LINT_ERROR_LOG_NAME: "lint-errors.log"
+  TEST_REPORT_NAME: "test-report.json"
+  TEST_ERROR_LOG_NAME: "test-errors.log"
+  VET_REPORT_NAME: "vet-report.txt"
+  VET_ERROR_LOG_NAME: "vet-errors.log"
+  GOSEC_REPORT_NAME: "gosec-report.json"
+  GOSEC_ERROR_LOG_NAME: "gosec-errors.log"
+  GOVULNCHECK_REPORT_NAME: "govulncheck-report.json"
+  GOVULNCHECK_ERROR_LOG_NAME: "govulncheck-errors.log"
+
+jobs:
+  build-binary:
+    runs-on: ubuntu-latest
+    outputs:
+      app-version: ${{ steps.set-app-version.outputs.app_version }}
+    steps:
+      - name: Set Git config
+        run: ${{ env.GIT_CONFIG_CMD }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Enforce mocks are up-to-date
+        run: |
+          make mocks
+          if [[ -n $(git status --porcelain) ]]; then
+              echo "❌ Mocks are outdated. Please regenerate mocks and commit the changes."
+              git diff
+              exit 1
+          else
+              echo "✅ Mocks are up-to-date."
+          fi
+
+      - name: Set app_version variable
+        id: set-app-version
+        run: |
+          if [ -n "${GITHUB_REF##*refs/tags/*}" ]; then
+            # Not a tag push, use commit hash as appVersion
+            APP_VERSION=$(git rev-parse --short HEAD)
+          else
+            # Tag push, use tag as appVersion
+            APP_VERSION=${GITHUB_REF##*/}
+          fi
+          echo "app_version=${APP_VERSION}" >> $GITHUB_OUTPUT
+          echo "using app_version=${APP_VERSION}"
+
+      - name: Build with injected build-time variables
+        run: |
+          go build -ldflags "-X main.appVersion=${APP_VERSION}" -o ${{ env.BINARY_NAME }} ./cmd/portkey-mcp-server
+        env:
+          GOOS: linux
+          GOARCH: amd64
+          CGO_ENABLED: 0
+          APP_VERSION: ${{ steps.set-app-version.outputs.app_version }}
+
+  lint:
+    runs-on: ubuntu-latest
+    needs: build-binary
+    steps:
+      - name: Set Git config
+        run: ${{ env.GIT_CONFIG_CMD }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Run linters
+        run: |
+          make lint
+
+      - name: Check if golangci-lint report exists
+        if: ${{ always() }}
+        run: |
+          if [ -s ${{ env.LINT_REPORT_NAME }} ]; then
+            echo "LINT_REPORT_EXISTS=true" >> $GITHUB_ENV
+          fi
+
+      - name: Upload golangci-lint report artifact
+        if: ${{ always() && env.LINT_REPORT_EXISTS == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.LINT_REPORT_NAME }}
+          path: ${{ env.LINT_REPORT_NAME }}
+
+      - name: Check if golangci-lint error log exists
+        if: ${{ always() }}
+        run: |
+          if [ -s ${{ env.LINT_ERROR_LOG_NAME }} ]; then
+            echo "LINT_ERROR_LOG_EXISTS=true" >> $GITHUB_ENV
+          fi
+
+      - name: Upload golangci-lint error log artifact
+        if: ${{ always() && env.LINT_ERROR_LOG_EXISTS == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.LINT_ERROR_LOG_NAME }}
+          path: ${{ env.LINT_ERROR_LOG_NAME }}
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build-binary
+    steps:
+      - name: Set Git config
+        run: ${{ env.GIT_CONFIG_CMD }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Run tests
+        run: |
+          make test
+
+      - name: Check if go test report exists
+        if: ${{ always() }}
+        run: |
+          if [ -s ${{ env.TEST_REPORT_NAME }} ]; then
+            echo "TEST_REPORT_EXISTS=true" >> $GITHUB_ENV
+          fi
+
+      - name: Upload go test report artifact
+        if: ${{ always() && env.TEST_REPORT_EXISTS == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.TEST_REPORT_NAME }}
+          path: ${{ env.TEST_REPORT_NAME }}
+
+      - name: Check if go test error log exists
+        if: ${{ always() }}
+        run: |
+          if [ -s ${{ env.TEST_ERROR_LOG_NAME }} ]; then
+            echo "TEST_ERROR_LOG_EXISTS=true" >> $GITHUB_ENV
+          fi
+
+      - name: Upload go test error log artifact
+        if: ${{ always() && env.TEST_ERROR_LOG_EXISTS == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.TEST_ERROR_LOG_NAME }}
+          path: ${{ env.TEST_ERROR_LOG_NAME }}
+
+  semantic-analysis:
+    runs-on: ubuntu-latest
+    needs: build-binary
+    steps:
+      - name: Set Git config
+        run: ${{ env.GIT_CONFIG_CMD }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Run semantic analysis
+        run: |
+          make semantic-analysis
+
+      - name: Check if go vet report exists
+        if: ${{ always() }}
+        run: |
+          if [ -s ${{ env.VET_REPORT_NAME }} ]; then
+            echo "VET_REPORT_EXISTS=true" >> $GITHUB_ENV
+          fi
+
+      - name: Upload go vet report artifact
+        if: ${{ always() && env.VET_REPORT_EXISTS == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.VET_REPORT_NAME }}
+          path: ${{ env.VET_REPORT_NAME }}
+
+      - name: Check if go vet error log exists
+        if: ${{ always() }}
+        run: |
+          if [ -s ${{ env.VET_ERROR_LOG_NAME }} ]; then
+            echo "VET_ERROR_LOG_EXISTS=true" >> $GITHUB_ENV
+          fi
+
+      - name: Upload go vet error log artifact
+        if: ${{ always() && env.VET_ERROR_LOG_EXISTS == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.VET_ERROR_LOG_NAME }}
+          path: ${{ env.VET_ERROR_LOG_NAME }}
+
+  security:
+    runs-on: ubuntu-latest
+    needs: build-binary
+    steps:
+      - name: Set Git config
+        run: ${{ env.GIT_CONFIG_CMD }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Run security suite
+        run: |
+          make security
+
+      - name: Check if gosec report exists
+        if: ${{ always() }}
+        run: |
+          if [ -s ${{ env.GOSEC_REPORT_NAME }} ]; then
+            echo "GOSEC_REPORT_EXISTS=true" >> $GITHUB_ENV
+          fi
+
+      - name: Upload gosec report artifact
+        if: ${{ always() && env.GOSEC_REPORT_EXISTS == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.GOSEC_REPORT_NAME }}
+          path: ${{ env.GOSEC_REPORT_NAME }}
+
+      - name: Check if gosec error log exists
+        if: ${{ always() }}
+        run: |
+          if [ -s ${{ env.GOSEC_ERROR_LOG_NAME }} ]; then
+            echo "GOSEC_ERROR_LOG_EXISTS=true" >> $GITHUB_ENV
+          fi
+
+      - name: Upload gosec error log artifact
+        if: ${{ always() && env.GOSEC_ERROR_LOG_EXISTS == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.GOSEC_ERROR_LOG_NAME }}
+          path: ${{ env.GOSEC_ERROR_LOG_NAME }}
+
+      - name: Check if govulncheck report exists
+        if: ${{ always() }}
+        run: |
+          if [ -s ${{ env.GOVULNCHECK_REPORT_NAME }} ]; then
+            echo "GOVULNCHECK_REPORT_EXISTS=true" >> $GITHUB_ENV
+          fi
+
+      - name: Upload govulncheck report artifact
+        if: ${{ always() && env.GOVULNCHECK_REPORT_EXISTS == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.GOVULNCHECK_REPORT_NAME }}
+          path: ${{ env.GOVULNCHECK_REPORT_NAME }}
+
+      - name: Check if govulncheck error log exists
+        if: ${{ always() }}
+        run: |
+          if [ -s ${{ env.GOVULNCHECK_ERROR_LOG_NAME }} ]; then
+            echo "GOVULNCHECK_ERROR_LOG_EXISTS=true" >> $GITHUB_ENV
+          fi
+
+      - name: Upload govulncheck error log artifact
+        if: ${{ always() && env.GOVULNCHECK_ERROR_LOG_EXISTS == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.GOVULNCHECK_ERROR_LOG_NAME }}
+          path: ${{ env.GOVULNCHECK_ERROR_LOG_NAME }}
