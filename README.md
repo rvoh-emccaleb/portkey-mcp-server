@@ -40,7 +40,7 @@ For running outside of Docker, you can configure the application by creating a `
 The application can be built and run using Docker with the provided Make targets:
 
 ```shell
-cd <root-of-repo>
+# From repo root
 
 # Build the Docker image
 make docker-build
@@ -55,7 +55,7 @@ make docker-run PORT=9000 TRANSPORT=sse PORTKEY_API_KEY=your-api-key
 You can also use the Docker commands directly:
 
 ```shell
-cd <root-of-repo>
+# From repo root
 
 # Build the Docker image
 docker build --build-arg APP_VERSION=$(git rev-parse --short HEAD) -t portkey-mcp-server .
@@ -73,7 +73,7 @@ docker run -p 8080:8080 \
 Alternatively, you can build a binary via:
 
 ```shell
-cd <root-of-repo>
+# From repo root
 make build
 ```
 
@@ -84,7 +84,7 @@ This will create a binary named `portkey-mcp-server` in the root directory that 
 To run the app with Go tooling, you can execute:
 
 ```shell
-cd <root-of-repo>
+# From repo root
 go run -ldflags="-X main.appVersion=$(git rev-parse --short HEAD)" cmd/portkey-mcp-server/main.go
 ```
 
