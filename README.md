@@ -4,6 +4,7 @@ A Model Control Protocol (MCP) server implementation for Portkey. This applicati
 
 ## Table of Contents
 - [Supported MCP Features](#supported-mcp-features)
+    - [Tools](#tools)
 - [Getting Started](#getting-started)
   - [Configuration](#configuration)
   - [Running the app](#running-the-app)
@@ -14,11 +15,7 @@ A Model Control Protocol (MCP) server implementation for Portkey. This applicati
   - [Using with Cursor IDE or Claude Desktop](#using-with-cursor-ide-or-claude-desktop)
   - [Accessing the SSE Server Manually](#accessing-the-sse-server-manually)
 - [Contributing](#contributing)
-  - [Local Development](#local-development)
-  - [Submitting a Pull Request](#submitting-a-pull-request)
-    - [Running Tests](#running-tests)
-    - [CI/CD Requirements](#cicd-requirements)
-  - [License](#license)
+- [License](#license)
 
 # Supported MCP Features
 ## Tools
@@ -43,6 +40,8 @@ For running outside of Docker, you can configure the application by creating a `
 The application can be built and run using Docker with the provided Make targets:
 
 ```shell
+cd <root-of-repo>
+
 # Build the Docker image
 make docker-build
 
@@ -56,6 +55,8 @@ make docker-run PORT=9000 TRANSPORT=sse PORTKEY_API_KEY=your-api-key
 You can also use the Docker commands directly:
 
 ```shell
+cd <root-of-repo>
+
 # Build the Docker image
 docker build --build-arg APP_VERSION=$(git rev-parse --short HEAD) -t portkey-mcp-server .
 
@@ -72,6 +73,7 @@ docker run -p 8080:8080 \
 Alternatively, you can build a binary via:
 
 ```shell
+cd <root-of-repo>
 make build
 ```
 
@@ -263,64 +265,8 @@ curl -X POST "http://localhost:8080/message?sessionId=abc123" \
 
 ## Contributing
 
-We welcome contributions to this project! Here's how to get started:
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on how to get started.
 
-### Local Development
-
-Execute the following to install git hooks in your local repo, which will ensure that mocks are regenerated and committed before pushing:
-```shell
-cd <root-of-repo>
-make install-hooks
-```
-
-If you are seeing stale linter errors coming from the result of `make lint` (part of those installed git hooks), you could try clearing your linter cache with `make lint-clear-cache`.
-
-### Submitting a Pull Request
-
-1. Create a new branch for your changes
-2. Make your changes and commit them with clear, descriptive commit messages
-3. Run all tests locally using the commands above
-4. Push your branch and create a Pull Request
-
-#### Running Tests
-
-Before submitting a PR, please consider running all tests locally to ensure your changes don't introduce any issues:
-
-```shell
-# Run all tests
-make test
-
-# Run benchmarks
-make benchmark
-
-# Generate mocks
-make mocks
-
-# Run linter
-make lint
-
-# Run security checks
-make security
-```
-
-> Note: The above are run automatically in our GitHub Actions workflows. Running them locally before pushing reduces noise in your PR and helps catch issues early.
-
-#### CI/CD Requirements
-
-All GitHub Actions jobs must pass before a PR can be merged. This includes:
-- Build verification
-- Unit tests
-- Linting
-- Security checks
-- etc.
-
-If any job fails, you can find detailed error output in the GitHub Actions artifacts:
-1. Go to the "Actions" tab in the repository
-2. Click on the failed workflow run
-3. Click on the failed job
-4. Look for the "Artifacts" section at the bottom of the job page
-5. Download and review the relevant artifacts (e.g., `lint-report.json` for linter errors)
-
-### License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
