@@ -23,6 +23,8 @@ A Model Control Protocol (MCP) server implementation for Portkey. This applicati
 
 ## Installation
 
+**Quick Start:** For immediate integration with AI tools, jump directly to the [Cursor IDE](#with-cursor-ide) or [Claude Desktop](#with-claude-desktop) configuration sections. These provide ready-to-use setup instructions for each tool.
+
 ### Docker
 
 The easiest way to get started is with the pre-built Docker image from Docker Hub:
@@ -188,6 +190,7 @@ With Docker (using the Docker Hub image):
       "command": "docker",
       "args": [
         "run",
+        "-i",
         "--rm",
         "-e", "PORTKEY_API_KEY",
         "-e", "TRANSPORT",
