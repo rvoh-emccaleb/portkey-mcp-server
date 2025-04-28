@@ -25,7 +25,7 @@ A Model Control Protocol (MCP) server implementation for Portkey. This applicati
 
 ### Docker
 
-The easiest way to get started is with the pre-built Docker image:
+The easiest way to get started is with the pre-built Docker image from Docker Hub:
 
 ```shell
 # Run the container with the latest image (PORTKEY_API_KEY is required)
@@ -124,7 +124,30 @@ Create a `.cursor/mcp.json` file in your home directory (for global-level config
 
 #### Using stdio Mode
 
-With binary:
+With Docker (using the Docker Hub image):
+```json
+{
+  "mcpServers": {
+    "Portkey": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e", "PORTKEY_API_KEY",
+        "-e", "TRANSPORT",
+        "ericmccaleb/portkey-mcp-server:latest"
+      ],
+      "env": {
+        "PORTKEY_API_KEY": "your-api-key",
+        "TRANSPORT": "stdio"
+      }
+    }
+  }
+}
+```
+
+Or with binary:
 ```json
 {
   "mcpServers": {
@@ -139,60 +162,13 @@ With binary:
 }
 ```
 
-Or with Docker:
-```json
-{
-  "mcpServers": {
-    "Portkey": {
-      "command": "docker",
-      "args": [
-        "run",
-        "--rm",
-        "-e", "PORTKEY_API_KEY",
-        "-e", "TRANSPORT",
-        "ericmccaleb/portkey-mcp-server:latest"
-      ],
-      "env": {
-        "PORTKEY_API_KEY": "your-api-key",
-        "TRANSPORT": "stdio"
-      }
-    }
-  }
-}
-```
-
 #### Using SSE Mode
-If the server is already running locally:
+If the server is already running locally, or elsewhere:
 ```json
 {
   "mcpServers": {
     "Portkey": {
       "url": "http://localhost:8080/sse"
-    }
-  }
-}
-```
-
-Or to start up via Docker:
-```json
-{
-  "mcpServers": {
-    "Portkey": {
-      "command": "docker",
-      "args": [
-        "run",
-        "-p", "8080:8080",
-        "--rm",
-        "-e", "PORTKEY_API_KEY",
-        "-e", "TRANSPORT",
-        "-e", "TRANSPORT_SSE_ADDRESS",
-        "ericmccaleb/portkey-mcp-server:latest"
-      ],
-      "env": {
-        "PORTKEY_API_KEY": "your-api-key",
-        "TRANSPORT": "sse",
-        "TRANSPORT_SSE_ADDRESS": ":8080"
-      }
     }
   }
 }
@@ -204,22 +180,7 @@ Claude Desktop only supports stdio mode. Create a `claude_desktop_config.json` f
 - macOS: `~/Library/Application Support/Claude/`
 - Windows: `%APPDATA%\Claude\`
 
-With binary:
-```json
-{
-  "mcpServers": {
-    "Portkey": {
-      "command": "/path/to/portkey-mcp-server-binary",
-      "env": {
-        "PORTKEY_API_KEY": "your-api-key",
-        "TRANSPORT": "stdio"
-      }
-    }
-  }
-}
-```
-
-Or with Docker:
+With Docker (using the Docker Hub image):
 ```json
 {
   "mcpServers": {
@@ -232,6 +193,21 @@ Or with Docker:
         "-e", "TRANSPORT",
         "ericmccaleb/portkey-mcp-server:latest"
       ],
+      "env": {
+        "PORTKEY_API_KEY": "your-api-key",
+        "TRANSPORT": "stdio"
+      }
+    }
+  }
+}
+```
+
+Or with binary:
+```json
+{
+  "mcpServers": {
+    "Portkey": {
+      "command": "/path/to/portkey-mcp-server-binary",
       "env": {
         "PORTKEY_API_KEY": "your-api-key",
         "TRANSPORT": "stdio"
