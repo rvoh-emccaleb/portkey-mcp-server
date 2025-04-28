@@ -16,8 +16,8 @@ A Model Control Protocol (MCP) server implementation for Portkey. This applicati
 - [Contributing](#contributing)
   - [Local Development](#local-development)
   - [Submitting a Pull Request](#submitting-a-pull-request)
-  - [Running Tests](#running-tests)
-  - [CI/CD Requirements](#cicd-requirements)
+    - [Running Tests](#running-tests)
+    - [CI/CD Requirements](#cicd-requirements)
   - [License](#license)
 
 # Supported MCP Features
@@ -279,12 +279,12 @@ If you are seeing stale linter errors coming from the result of `make lint` (par
 
 1. Create a new branch for your changes
 2. Make your changes and commit them with clear, descriptive commit messages
-3. Run all tests locally using the commands, below
+3. Run all tests locally using the commands above
 4. Push your branch and create a Pull Request
 
-### Running Tests
+#### Running Tests
 
-Before submitting a PR, please run all tests locally to ensure your changes don't introduce any issues:
+Before submitting a PR, please consider running all tests locally to ensure your changes don't introduce any issues:
 
 ```shell
 # Run all tests
@@ -313,8 +313,6 @@ All GitHub Actions jobs must pass before a PR can be merged. This includes:
 - Linting
 - Security checks
 - etc.
-
-
 
 If any job fails, you can find detailed error output in the GitHub Actions artifacts:
 1. Go to the "Actions" tab in the repository
