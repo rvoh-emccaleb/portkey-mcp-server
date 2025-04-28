@@ -2,21 +2,29 @@
 
 A Model Control Protocol (MCP) server implementation for Portkey. This application serves as a bridge for connecting various AI tools and services to Portkey through the Model Control Protocol.
 
+## Table of Contents
+- [Supported MCP Features](#supported-mcp-features)
+- [Getting Started](#getting-started)
+  - [Configuration](#configuration)
+  - [Running the app](#running-the-app)
+    - [Running with Docker](#running-with-docker)
+    - [Binary Execution](#binary-execution)
+    - [Direct Go Execution](#direct-go-execution)
+- [Interacting with the MCP Server](#interacting-with-the-mcp-server)
+  - [Using with Cursor IDE or Claude Desktop](#using-with-cursor-ide-or-claude-desktop)
+  - [Accessing the SSE Server Manually](#accessing-the-sse-server-manually)
+- [Contributing](#contributing)
+  - [Local Development](#local-development)
+  - [Submitting a Pull Request](#submitting-a-pull-request)
+  - [Running Tests](#running-tests)
+  - [CI/CD Requirements](#cicd-requirements)
+  - [License](#license)
+
 # Supported MCP Features
 ## Tools
 - [`prompt_render`](https://portkey.ai/docs/api-reference/inference-api/prompts/render)
 
 # Getting Started
-
-### Local Development
-
-Execute the following to install git hooks in your local repo, which will ensure that mocks are regenerated and committed before pushing:
-```shell
-cd <root-of-repo>
-make install-hooks
-```
-
-If you are seeing stale linter errors coming from the result of `make lint` (part of those installed git hooks), you could try clearing your linter cache with `make lint-clear-cache`.
 
 ### Configuration
 
@@ -29,25 +37,6 @@ Configuration is handled through environment variables loaded at startup. [`.env
 For running outside of Docker, you can configure the application by creating a `.env` file based on the variables expected by the [config package](./internal/config/). For Docker, environment variables should be set by other means.
 
 ### Running the app
-
-#### Direct Go Execution
-
-To run the app locally with the correct version information, you can execute:
-
-```shell
-cd <root-of-repo>
-go run -ldflags="-X main.appVersion=$(git rev-parse --short HEAD)" cmd/portkey-mcp-server/main.go
-```
-
-#### Binary Execution
-
-Alternatively, you can build a binary via:
-
-```shell
-make build
-```
-
-This will create a binary named `portkey-mcp-server` in the root directory that you can execute directly.
 
 #### Running with Docker
 
@@ -78,7 +67,150 @@ docker run -p 8080:8080 \
   portkey-mcp-server
 ```
 
+#### Binary Execution
+
+Alternatively, you can build a binary via:
+
+```shell
+make build
+```
+
+This will create a binary named `portkey-mcp-server` in the root directory that you can execute directly.
+
+#### Direct Go Execution
+
+To run the app with Go tooling, you can execute:
+
+```shell
+cd <root-of-repo>
+go run -ldflags="-X main.appVersion=$(git rev-parse --short HEAD)" cmd/portkey-mcp-server/main.go
+```
+
 ### Interacting with the MCP Server
+
+#### Using with Cursor IDE or Claude Desktop
+
+The MCP server can be configured for different clients and transport modes. Choose the configuration that matches your use case:
+
+##### For Claude Desktop (stdio mode only)
+
+Create a `claude_desktop_config.json` file in:
+- macOS: `~/Library/Application Support/Claude/`
+- Windows: `%APPDATA%\Claude\`
+
+```json
+{
+  "mcpServers": {
+    "Portkey": {
+      "command": "/path/to/portkey-mcp-server-binary",
+      "env": {
+        "PORTKEY_API_KEY": "your-api-key",
+        "TRANSPORT": "stdio"
+      }
+    }
+  }
+}
+```
+
+Or using Docker:
+```json
+{
+  "mcpServers": {
+    "Portkey": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-e", "PORTKEY_API_KEY",
+        "-e", "TRANSPORT",
+        "portkey-mcp-server:latest"
+      ],
+      "env": {
+        "PORTKEY_API_KEY": "your-api-key",
+        "TRANSPORT": "stdio"
+      }
+    }
+  }
+}
+```
+
+##### For Cursor IDE
+
+Create a `.cursor/mcp.json` file in your home directory (for global-level config) or in your repo root (for project-level config).
+
+###### Cursor: Using stdio Mode
+```json
+{
+  "mcpServers": {
+    "Portkey": {
+      "command": "/path/to/portkey-mcp-server-binary",
+      "env": {
+        "PORTKEY_API_KEY": "your-api-key",
+        "TRANSPORT": "stdio"
+      }
+    }
+  }
+}
+```
+
+Or using Docker:
+```json
+{
+  "mcpServers": {
+    "Portkey": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-e", "PORTKEY_API_KEY",
+        "-e", "TRANSPORT",
+        "portkey-mcp-server:latest"
+      ],
+      "env": {
+        "PORTKEY_API_KEY": "your-api-key",
+        "TRANSPORT": "stdio"
+      }
+    }
+  }
+}
+```
+
+###### Cursor: Using SSE Mode
+If the server is already running locally:
+```json
+{
+  "mcpServers": {
+    "Portkey": {
+      "url": "http://localhost:8080/sse"
+    }
+  }
+}
+```
+
+Or to start up via Docker:
+```json
+{
+  "mcpServers": {
+    "Portkey": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-p", "8080:8080",
+        "--rm",
+        "-e", "PORTKEY_API_KEY",
+        "-e", "TRANSPORT",
+        "-e", "TRANSPORT_SSE_ADDRESS",
+        "portkey-mcp-server:latest"
+      ],
+      "env": {
+        "PORTKEY_API_KEY": "your-api-key",
+        "TRANSPORT": "sse",
+        "TRANSPORT_SSE_ADDRESS": ":8080"
+      }
+    }
+  }
+}
+```
 
 #### Accessing the SSE Server Manually
 
@@ -129,71 +261,30 @@ curl -X POST "http://localhost:8080/message?sessionId=abc123" \
 
 > Note: The SSE connection in step 1 must remain open during your session. Run it in a separate terminal window and do not close it until you're done with the session.
 
-#### Using with Cursor IDE
+## Contributing
 
-To use this MCP server with Cursor IDE, you'll need to configure a `.cursor/mcp.json` file:
+We welcome contributions to this project! Here's how to get started:
 
-##### Using SSE Mode
+### Local Development
 
-If the server is already running locally:
-```json
-{
-  "mcpServers": {
-    "Portkey": {
-      "url": "http://localhost:8080/sse"
-    }
-  }
-}
+Execute the following to install git hooks in your local repo, which will ensure that mocks are regenerated and committed before pushing:
+```shell
+cd <root-of-repo>
+make install-hooks
 ```
 
-To start up via Docker:
-```json
-{
-  "mcpServers": {
-    "Portkey": {
-      "command": "docker",
-      "args": [
-        "run",
-        "-p",
-        "8080:8080",
-        "--rm",
-        "-e",
-        "TRANSPORT",
-        "-e",
-        "TRANSPORT_SSE_ADDRESS",
-        "-e",
-        "PORTKEY_API_KEY",
-        "portkey-mcp-server:latest"
-      ],
-      "env": {
-        "TRANSPORT": "sse",
-        "TRANSPORT_SSE_ADDRESS": ":8080",
-        "PORTKEY_API_KEY": "your-api-key"
-      }
-    }
-  }
-}
-```
+If you are seeing stale linter errors coming from the result of `make lint` (part of those installed git hooks), you could try clearing your linter cache with `make lint-clear-cache`.
 
-##### Using stdio Mode (Local Binary)
+### Submitting a Pull Request
 
-```json
-{
-  "mcpServers": {
-    "Portkey": {
-      "command": "/path/to/portkey-mcp-server-binary",
-      "env": {
-        "TRANSPORT": "stdio",
-        "PORTKEY_API_KEY": "your-api-key"
-      }
-    }
-  }
-}
-```
+1. Create a new branch for your changes
+2. Make your changes and commit them with clear, descriptive commit messages
+3. Run all tests locally using the commands, below
+4. Push your branch and create a Pull Request
 
 ### Running Tests
 
-This project uses various testing tools:
+Before submitting a PR, please run all tests locally to ensure your changes don't introduce any issues:
 
 ```shell
 # Run all tests
@@ -211,3 +302,27 @@ make lint
 # Run security checks
 make security
 ```
+
+> Note: The above are run automatically in our GitHub Actions workflows. Running them locally before pushing reduces noise in your PR and helps catch issues early.
+
+#### CI/CD Requirements
+
+All GitHub Actions jobs must pass before a PR can be merged. This includes:
+- Build verification
+- Unit tests
+- Linting
+- Security checks
+- etc.
+
+
+
+If any job fails, you can find detailed error output in the GitHub Actions artifacts:
+1. Go to the "Actions" tab in the repository
+2. Click on the failed workflow run
+3. Click on the failed job
+4. Look for the "Artifacts" section at the bottom of the job page
+5. Download and review the relevant artifacts (e.g., `lint-report.json` for linter errors)
+
+### License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
