@@ -28,6 +28,8 @@ We will review your PR and work together to get it merged!
 Before submitting a PR, please consider running all tests locally to ensure your changes don't introduce any issues:
 
 ```shell
+cd <root-of-repo>
+
 # Run all tests
 make test
 
