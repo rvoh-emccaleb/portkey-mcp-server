@@ -23,7 +23,7 @@ A Model Control Protocol (MCP) server implementation for Portkey. This applicati
 
 ## Installation
 
-**Quick Start:** For immediate integration with AI tools, jump directly to the [Cursor IDE](#with-cursor-ide) or [Claude Desktop](#with-claude-desktop) configuration sections. These provide ready-to-use setup instructions for each tool.
+**Quick Start:** For immediate integration with AI tools, jump directly to the [Cursor IDE](#with-cursor-ide) or [Claude Desktop](#with-claude-desktop) usage sections. These provide ready-to-use setup instructions for each tool.
 
 ### Docker
 
