@@ -17,11 +17,11 @@ A Model Control Protocol (MCP) server implementation for Portkey. This applicati
 - [Contributing](#contributing)
 - [License](#license)
 
-# Supported MCP Features
-## Tools
+## Supported MCP Features
+### Tools
 - [`prompt_render`](https://portkey.ai/docs/api-reference/inference-api/prompts/render)
 
-# Getting Started
+## Getting Started
 
 ### Configuration
 
@@ -88,13 +88,13 @@ To run the app with Go tooling, you can execute:
 go run -ldflags="-X main.appVersion=$(git rev-parse --short HEAD)" cmd/portkey-mcp-server/main.go
 ```
 
-### Interacting with the MCP Server
+## Interacting with the MCP Server
 
-#### Using with Cursor IDE or Claude Desktop
+### Using with Cursor IDE or Claude Desktop
 
 The MCP server can be configured for different clients and transport modes. Choose the configuration that matches your use case:
 
-##### For Claude Desktop (stdio mode only)
+#### For Claude Desktop (stdio mode only)
 
 Create a `claude_desktop_config.json` file in:
 - macOS: `~/Library/Application Support/Claude/`
@@ -136,11 +136,11 @@ Or using Docker:
 }
 ```
 
-##### For Cursor IDE
+#### For Cursor IDE
 
 Create a `.cursor/mcp.json` file in your home directory (for global-level config) or in your repo root (for project-level config).
 
-###### Cursor: Using stdio Mode
+##### Cursor: Using stdio Mode
 ```json
 {
   "mcpServers": {
@@ -177,7 +177,7 @@ Or using Docker:
 }
 ```
 
-###### Cursor: Using SSE Mode
+##### Cursor: Using SSE Mode
 If the server is already running locally:
 ```json
 {
@@ -214,7 +214,7 @@ Or to start up via Docker:
 }
 ```
 
-#### Accessing the SSE Server Manually
+### Accessing the SSE Server Manually
 
 When running in SSE mode, you can access the server using HTTP requests. Following the MCP protocol requires these steps:
 
