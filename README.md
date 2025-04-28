@@ -5,15 +5,15 @@ A Model Control Protocol (MCP) server implementation for Portkey. This applicati
 ## Table of Contents
 - [Supported MCP Features](#supported-mcp-features)
     - [Tools](#tools)
-- [Getting Started](#getting-started)
-  - [Configuration](#configuration)
-  - [Running the app](#running-the-app)
-    - [Running with Docker](#running-with-docker)
-    - [Binary Execution](#binary-execution)
-    - [Direct Go Execution](#direct-go-execution)
-- [Interacting with the MCP Server](#interacting-with-the-mcp-server)
-  - [Using with Cursor IDE or Claude Desktop](#using-with-cursor-ide-or-claude-desktop)
-  - [Accessing the SSE Server Manually](#accessing-the-sse-server-manually)
+- [Installation](#installation)
+  - [Docker](#docker)
+  - [Binary](#binary)
+  - [From Source](#from-source)
+- [Configuration](#configuration)
+- [Usage](#usage)
+  - [With Cursor IDE](#with-cursor-ide)
+  - [With Claude Desktop](#with-claude-desktop)
+  - [Manual SSE Requests](#manual-sse-requests)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -21,28 +21,31 @@ A Model Control Protocol (MCP) server implementation for Portkey. This applicati
 ### Tools
 - [`prompt_render`](https://portkey.ai/docs/api-reference/inference-api/prompts/render)
 
-## Getting Started
+## Installation
 
-### Configuration
+**Quick Start:** For immediate integration with AI tools, jump directly to the [Cursor IDE](#with-cursor-ide) or [Claude Desktop](#with-claude-desktop) usage sections. These provide ready-to-use setup instructions for each tool.
 
-The server supports different transport configurations:
-- `stdio` (Standard Input/Output) transport for command-line interfaces
-- `sse` (Server-Sent Events) transport for HTTP-based communication
+### Docker
 
-Configuration is handled through environment variables loaded at startup. [`.env.example`](./.env.example) can be used as a reference, but the source-of-truth is always the [config package](./internal/config/).
-
-For running outside of Docker, you can configure the application by creating a `.env` file based on the variables expected by the [config package](./internal/config/). For Docker, environment variables should be set by other means.
-
-### Running the app
-
-#### Running with Docker
-
-The application can be built and run using Docker with the provided Make targets:
+The easiest way to get started is with the pre-built Docker image from Docker Hub:
 
 ```shell
-# From repo root
+# Run the container with the latest image (PORTKEY_API_KEY is required)
+docker run -p 8080:8080 \
+  -e TRANSPORT=sse \
+  -e TRANSPORT_SSE_ADDRESS=:8080 \
+  -e PORTKEY_API_KEY=your-api-key \
+  ericmccaleb/portkey-mcp-server:latest
+```
 
-# Build the Docker image
+You can also build and run it locally using the Make targets:
+
+```shell
+# Clone the repository
+git clone https://github.com/rvoh-emccaleb/portkey-mcp-server.git
+cd portkey-mcp-server
+
+# Build the Docker image locally (optional)
 make docker-build
 
 # Run the container (PORTKEY_API_KEY is required)
@@ -68,9 +71,9 @@ docker run -p 8080:8080 \
   portkey-mcp-server
 ```
 
-#### Binary Execution
+### Binary
 
-Alternatively, you can build a binary via:
+To build a standalone binary:
 
 ```shell
 # From repo root
@@ -79,68 +82,74 @@ make build
 
 This will create a binary named `portkey-mcp-server` in the root directory that you can execute directly.
 
-#### Direct Go Execution
+To run the binary, you'll need to provide the required environment variables:
 
-To run the app with Go tooling, you can execute:
+```shell
+# From repo root
+
+# Run in SSE mode (HTTP server)
+PORTKEY_API_KEY=your-api-key \
+TRANSPORT=sse \
+TRANSPORT_SSE_ADDRESS=:8080 \
+./portkey-mcp-server
+
+# Run in stdio mode
+PORTKEY_API_KEY=your-api-key \
+TRANSPORT=stdio \
+./portkey-mcp-server
+```
+
+### From Source
+
+To run the app directly with Go tooling:
 
 ```shell
 # From repo root
 go run -ldflags="-X main.appVersion=$(git rev-parse --short HEAD)" cmd/portkey-mcp-server/main.go
 ```
 
-## Interacting with the MCP Server
+## Configuration
 
-### Using with Cursor IDE or Claude Desktop
+The server supports different transport configurations:
+- `stdio` (Standard Input/Output) transport for command-line interfaces
+- `sse` (Server-Sent Events) transport for HTTP-based communication
 
-The MCP server can be configured for different clients and transport modes. Choose the configuration that matches your use case:
+Configuration is handled through environment variables loaded at startup. [`.env.example`](./.env.example) can be used as a reference, but the source-of-truth is always the [config package](./internal/config/).
 
-#### For Claude Desktop (stdio mode only)
+For running outside of Docker, you can configure the application by creating a `.env` file based on the variables expected by the [config package](./internal/config/). For Docker, environment variables should be set by other means.
 
-Create a `claude_desktop_config.json` file in:
-- macOS: `~/Library/Application Support/Claude/`
-- Windows: `%APPDATA%\Claude\`
+## Usage
 
-```json
-{
-  "mcpServers": {
-    "Portkey": {
-      "command": "/path/to/portkey-mcp-server-binary",
-      "env": {
-        "PORTKEY_API_KEY": "your-api-key",
-        "TRANSPORT": "stdio"
-      }
-    }
-  }
-}
-```
-
-Or using Docker:
-```json
-{
-  "mcpServers": {
-    "Portkey": {
-      "command": "docker",
-      "args": [
-        "run",
-        "--rm",
-        "-e", "PORTKEY_API_KEY",
-        "-e", "TRANSPORT",
-        "portkey-mcp-server:latest"
-      ],
-      "env": {
-        "PORTKEY_API_KEY": "your-api-key",
-        "TRANSPORT": "stdio"
-      }
-    }
-  }
-}
-```
-
-#### For Cursor IDE
+### With Cursor IDE
 
 Create a `.cursor/mcp.json` file in your home directory (for global-level config) or in your repo root (for project-level config).
 
-##### Cursor: Using stdio Mode
+#### Using stdio Mode
+
+With Docker (using the Docker Hub image):
+```json
+{
+  "mcpServers": {
+    "Portkey": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e", "PORTKEY_API_KEY",
+        "-e", "TRANSPORT",
+        "ericmccaleb/portkey-mcp-server:latest"
+      ],
+      "env": {
+        "PORTKEY_API_KEY": "your-api-key",
+        "TRANSPORT": "stdio"
+      }
+    }
+  }
+}
+```
+
+Or with binary:
 ```json
 {
   "mcpServers": {
@@ -155,30 +164,8 @@ Create a `.cursor/mcp.json` file in your home directory (for global-level config
 }
 ```
 
-Or using Docker:
-```json
-{
-  "mcpServers": {
-    "Portkey": {
-      "command": "docker",
-      "args": [
-        "run",
-        "--rm",
-        "-e", "PORTKEY_API_KEY",
-        "-e", "TRANSPORT",
-        "portkey-mcp-server:latest"
-      ],
-      "env": {
-        "PORTKEY_API_KEY": "your-api-key",
-        "TRANSPORT": "stdio"
-      }
-    }
-  }
-}
-```
-
-##### Cursor: Using SSE Mode
-If the server is already running locally:
+#### Using SSE Mode
+If the server is already running locally, or elsewhere:
 ```json
 {
   "mcpServers": {
@@ -189,7 +176,13 @@ If the server is already running locally:
 }
 ```
 
-Or to start up via Docker:
+### With Claude Desktop
+
+Claude Desktop only supports stdio mode. Create a `claude_desktop_config.json` file in:
+- macOS: `~/Library/Application Support/Claude/`
+- Windows: `%APPDATA%\Claude\`
+
+With Docker (using the Docker Hub image):
 ```json
 {
   "mcpServers": {
@@ -197,24 +190,37 @@ Or to start up via Docker:
       "command": "docker",
       "args": [
         "run",
-        "-p", "8080:8080",
+        "-i",
         "--rm",
         "-e", "PORTKEY_API_KEY",
         "-e", "TRANSPORT",
-        "-e", "TRANSPORT_SSE_ADDRESS",
-        "portkey-mcp-server:latest"
+        "ericmccaleb/portkey-mcp-server:latest"
       ],
       "env": {
         "PORTKEY_API_KEY": "your-api-key",
-        "TRANSPORT": "sse",
-        "TRANSPORT_SSE_ADDRESS": ":8080"
+        "TRANSPORT": "stdio"
       }
     }
   }
 }
 ```
 
-### Accessing the SSE Server Manually
+Or with binary:
+```json
+{
+  "mcpServers": {
+    "Portkey": {
+      "command": "/path/to/portkey-mcp-server-binary",
+      "env": {
+        "PORTKEY_API_KEY": "your-api-key",
+        "TRANSPORT": "stdio"
+      }
+    }
+  }
+}
+```
+
+### Manual SSE Requests
 
 When running in SSE mode, you can access the server using HTTP requests. Following the MCP protocol requires these steps:
 
