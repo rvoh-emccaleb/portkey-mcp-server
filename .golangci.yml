@@ -1,0 +1,67 @@
+# Run `golangci-lint help linters` to see available linters, presets (linter bundles), and their descriptions.
+linters:
+  presets:
+    - bugs
+    - comment
+    - complexity
+    - error
+    - format
+    - import
+    - metalinter
+    - module
+    - performance
+    - sql
+    - style
+    - test
+    - unused
+
+  disable:
+    - gosec  # Already covered by separate Makefile target
+    - govet  # Already covered by separate Makefile target
+
+run:
+  timeout: 5m
+
+linters-settings:
+  depguard:
+    rules:
+      main:
+        list-mode: original
+        files:
+          - $all
+        allow:
+          - $gostd
+          - github.com/rvoh-emccaleb/portkey-mcp-server/internal
+          - github.com/mark3labs/mcp-go
+          - github.com/kelseyhightower/envconfig
+          - github.com/joho/godotenv
+
+  funlen:
+    lines: 80       # Max lines allowed
+    statements: 50  # Max statements allowed
+
+  gci:
+    skip-generated: true
+    custom-order: true
+    sections:  # This is an idiomatic ordering of imports
+      - standard
+      - default
+      - localmodule
+
+  tagliatelle:
+    case:
+      use-field-name: false
+      rules:
+        json: snake
+        envconfig: upperSnake
+
+  varnamelen:
+    min-name-length: 2
+    ignore-type-assert-ok: true
+    ignore-map-index-ok: true
+    ignore-chan-recv-ok: true
+    ignore-names:
+      - b   # idiomatic name for []byte
+      - i   # idiomatic name for index in loop
+      - s   # idiomatic name for general string variable
+      - w   # idiomatic name for http.ResponseWriter

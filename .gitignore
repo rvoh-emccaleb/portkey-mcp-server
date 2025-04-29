@@ -1,3 +1,4 @@
+# Secret management
 .env
 
 # Local Cursor MCP config
@@ -5,3 +6,20 @@
 
 # IDE
 .idea
+
+# Binary
+portkey-mcp-server
+
+# Some of our Makefile target outputs
+lint-report.json
+lint-errors.log
+test-report.json
+test-errors.log
+benchmark-report.txt
+benchmark-errors.log
+vet-report.txt
+vet-errors.log
+gosec-report.json
+gosec-errors.log
+govulncheck-report.json
+govulncheck-errors.log

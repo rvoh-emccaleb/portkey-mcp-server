@@ -1,0 +1,24 @@
+#!/bin/bash
+
+echo "Running pre-push hook: Regenerating mocks..."
+make mocks
+git add internal/mock/
+
+# Check if there are any unstaged changes after regeneration
+if [[ -n $(git diff --cached --name-only) ]]; then
+    echo "Mocks updated. Please commit the changes before pushing."
+    exit 1
+fi
+
+echo "Mocks are up-to-date. Running linter..."
+
+make lint
+LINT_STATUS=$?
+
+# If lint failed, prevent push
+if [ $LINT_STATUS -ne 0 ]; then
+    echo "Linting failed. Please fix the issues before pushing. Issues can be found in lint-report.json"
+    exit 1
+fi
+
+echo "Linting passed. Proceeding with push."
