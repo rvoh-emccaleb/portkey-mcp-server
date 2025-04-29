@@ -55,7 +55,7 @@ func TestPortkeyConfigMasking(t *testing.T) {
 
 	// Test with slog JSON handler (simulating main.go)
 	var logBuf bytes.Buffer
-	jsonHandler := slog.NewJSONHandler(&logBuf, &slog.HandlerOptions{
+	jsonHandler := slog.NewJSONHandler(&logBuf, &slog.HandlerOptions{ //nolint:exhaustruct
 		Level: slog.LevelInfo,
 	})
 	logger := slog.New(jsonHandler)

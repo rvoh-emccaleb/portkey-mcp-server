@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/json"
+	"fmt"
 )
 
 const numExposedChars = 4 // number of characters to show at the end of mostly masked strings
@@ -31,5 +32,10 @@ func (mms MostlyMaskedString) String() string {
 // This ensures values are masked when using structured logging like slog with JSON handlers.
 func (mms MostlyMaskedString) MarshalJSON() ([]byte, error) {
 	// Use the String method to maintain consistent masking format
-	return json.Marshal(mms.String())
+	data, err := json.Marshal(mms.String())
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal mostly masked string to json: %w", err)
+	}
+
+	return data, nil
 }

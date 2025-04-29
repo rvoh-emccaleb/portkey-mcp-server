@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/json"
+	"fmt"
 )
 
 // MaskedString is a type that fully masks a string when String is called.
@@ -24,5 +25,10 @@ func (ms MaskedString) String() string {
 // MarshalJSON implements the json.Marshaler interface to mask the value in JSON output.
 // This ensures values are masked when using structured logging like slog with JSON handlers.
 func (ms MaskedString) MarshalJSON() ([]byte, error) {
-	return json.Marshal("****")
+	data, err := json.Marshal("****")
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal masked string to json: %w", err)
+	}
+
+	return data, nil
 }
