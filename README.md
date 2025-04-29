@@ -1,6 +1,6 @@
 # portkey-mcp-server
 
-A Model Control Protocol (MCP) server implementation for Portkey. This application serves as a bridge for connecting various AI tools and services to Portkey through the Model Control Protocol.
+A Model Context Protocol (MCP) server implementation for Portkey. This application serves as a bridge for connecting various AI tools and services to Portkey through the Model Context Protocol.
 
 ## Table of Contents
 - [Supported MCP Features](#supported-mcp-features)
