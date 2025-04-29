@@ -1,8 +1,10 @@
 package config_test
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"strings"
 	"testing"
 
@@ -34,6 +36,7 @@ func TestPortkeyConfigMasking(t *testing.T) {
 		t.Error("Expected masked characters **** not found in string output")
 	}
 
+	// Test direct JSON marshaling
 	jsonBytes, err := json.Marshal(cfg)
 	if err != nil {
 		t.Fatalf("Failed to marshal config to JSON: %v", err)
@@ -41,7 +44,32 @@ func TestPortkeyConfigMasking(t *testing.T) {
 
 	jsonStr := string(jsonBytes)
 
-	if !strings.Contains(jsonStr, apiKey) {
-		t.Error("Expected APIKey to be present in JSON output")
+	// With the new MarshalJSON implementation, the API key should be masked in JSON
+	if strings.Contains(jsonStr, apiKey) {
+		t.Error("APIKey not masked in direct JSON output")
+	}
+
+	if !strings.Contains(jsonStr, "****") {
+		t.Error("Expected masked characters **** not found in JSON output")
+	}
+
+	// Test with slog JSON handler (simulating main.go)
+	var logBuf bytes.Buffer
+	jsonHandler := slog.NewJSONHandler(&logBuf, &slog.HandlerOptions{ //nolint:exhaustruct
+		Level: slog.LevelInfo,
+	})
+	logger := slog.New(jsonHandler)
+
+	// This mirrors how it's logged in main.go
+	logger.Info("using config", "portkey", cfg)
+
+	logOutput := logBuf.String()
+
+	if strings.Contains(logOutput, apiKey) {
+		t.Error("APIKey not masked in slog JSON output")
+	}
+
+	if !strings.Contains(logOutput, "****") {
+		t.Error("Expected masked characters **** not found in slog JSON output")
 	}
 }

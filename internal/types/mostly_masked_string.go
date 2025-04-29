@@ -1,5 +1,10 @@
 package types
 
+import (
+	"encoding/json"
+	"fmt"
+)
+
 const numExposedChars = 4 // number of characters to show at the end of mostly masked strings
 
 // MostlyMaskedString is a type that mostly masks a string when String is called.
@@ -21,4 +26,16 @@ func (mms MostlyMaskedString) String() string {
 	}
 
 	return "****" + string(mms)[len(mms)-numExposedChars:]
+}
+
+// MarshalJSON implements the json.Marshaler interface to mask the value in JSON output.
+// This ensures values are masked when using structured logging like slog with JSON handlers.
+func (mms MostlyMaskedString) MarshalJSON() ([]byte, error) {
+	// Use the String method to maintain consistent masking format
+	data, err := json.Marshal(mms.String())
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal mostly masked string to json: %w", err)
+	}
+
+	return data, nil
 }
