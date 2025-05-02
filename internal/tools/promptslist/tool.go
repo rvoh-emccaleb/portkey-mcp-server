@@ -54,7 +54,7 @@ func NewTool(portkeyCfg config.Portkey, toolCfg config.BaseTool) tools.Tuple {
 	description := "List all prompts in your Portkey account after applying the provided parameters. This tool allows " +
 		"you to retrieve prompt metadata like prompt ID, prompt slug, name, collection, model, and status. " +
 		"You can filter by various parameters and paginate results. There is the ability to search by " +
-		"approximate slug matches."
+		"approximate name and slug matches."
 
 	if toolCfg.Description != "" {
 		description = toolCfg.Description
@@ -76,7 +76,7 @@ func NewTool(portkeyCfg config.Portkey, toolCfg config.BaseTool) tools.Tuple {
 			mcp.Description("Optional. Number of results per page."),
 		),
 		mcp.WithString(toolParamSearch,
-			mcp.Description("Optional. Search term to filter prompts by slug."),
+			mcp.Description("Optional. Search term to filter prompts by name or slug."),
 		),
 	)
 
