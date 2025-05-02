@@ -20,9 +20,9 @@ import (
 const (
 	toolName = "prompt_render"
 
-	toolParamPromptID  = "prompt_id"
-	toolParamPromptTag = "prompt_tag"
-	toolParamVariables = "variables"
+	toolArgPromptID  = "prompt_id"
+	toolArgPromptTag = "prompt_tag"
+	toolArgVariables = "variables"
 
 	errTextInternalError = "internal error while processing request"
 )
@@ -32,7 +32,7 @@ var (
 	ErrVariablesMustBeStrings = errors.New("all variable values must be strings")
 )
 
-type toolParams struct {
+type toolArgs struct {
 	promptID  string
 	promptTag string
 	variables map[string]string
@@ -50,15 +50,15 @@ func NewTool(portkeyCfg config.Portkey, toolCfg config.BaseTool) tools.Tuple {
 	promptRenderTool := mcp.NewTool(
 		toolName,
 		mcp.WithDescription(description),
-		mcp.WithString(toolParamPromptID,
+		mcp.WithString(toolArgPromptID,
 			mcp.Required(),
 			mcp.Description("The ID of the Portkey prompt to render. Specifically, this is the 'slug' of the prompt, if you "+
 				"have used search tools to find this prompt."),
 		),
-		mcp.WithString(toolParamPromptTag,
+		mcp.WithString(toolArgPromptTag,
 			mcp.Description("Specific prompt version or label (e.g. '12', 'latest'). If omitted the published version is used."),
 		),
-		mcp.WithObject(toolParamVariables,
+		mcp.WithObject(toolArgVariables,
 			mcp.Description("Variables object to substitute into the prompt template. The object should be a JSON object with "+
 				"key-value pairs of string variable names to string values."),
 		),
@@ -78,16 +78,16 @@ func promptRenderHandler(portkey config.Portkey) server.ToolHandlerFunc {
 	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		lgr := middleware.GetLogger(ctx)
 
-		params, err := getToolParams(request)
+		args, err := getToolArguments(request)
 		if err != nil {
-			lgr.Info("failed to get user-provided tool params from mcp request", "error", err)
+			lgr.Info("failed to get user-provided tool arguments from mcp request", "error", err)
 
 			return mcp.NewToolResultErrorFromErr("invalid input", err), nil
 		}
 
-		url := createURL(portkey, params)
+		url := createURL(portkey, args)
 
-		body, err := createReqBody(params)
+		body, err := createReqBody(args)
 		if err != nil {
 			lgr.Error("failed to create request body", "error", err)
 
@@ -140,50 +140,50 @@ func promptRenderHandler(portkey config.Portkey) server.ToolHandlerFunc {
 	}
 }
 
-func getToolParams(request mcp.CallToolRequest) (toolParams, error) {
-	promptID := mcp.ParseString(request, toolParamPromptID, "")
+func getToolArguments(request mcp.CallToolRequest) (toolArgs, error) {
+	promptID := mcp.ParseString(request, toolArgPromptID, "")
 	if promptID == "" {
-		return toolParams{}, ErrPromptIDRequired
+		return toolArgs{}, ErrPromptIDRequired
 	}
 
-	promptTag := mcp.ParseString(request, toolParamPromptTag, "")
+	promptTag := mcp.ParseString(request, toolArgPromptTag, "")
 
 	var variables map[string]string
 
-	rawVariables := mcp.ParseStringMap(request, toolParamVariables, nil)
+	rawVariables := mcp.ParseStringMap(request, toolArgVariables, nil)
 	if rawVariables != nil {
 		variables = make(map[string]string, len(rawVariables))
 
 		for key, value := range rawVariables {
 			str, ok := value.(string)
 			if !ok {
-				return toolParams{}, fmt.Errorf("%w: key %q has type %T", ErrVariablesMustBeStrings, key, value)
+				return toolArgs{}, fmt.Errorf("%w: key %q has type %T", ErrVariablesMustBeStrings, key, value)
 			}
 
 			variables[key] = str
 		}
 	}
 
-	return toolParams{
+	return toolArgs{
 		promptID:  promptID,
 		promptTag: promptTag,
 		variables: variables,
 	}, nil
 }
 
-func createURL(portkey config.Portkey, params toolParams) string {
-	endpointID := params.promptID
-	if params.promptTag != "" {
-		endpointID = fmt.Sprintf("%s@%s", params.promptID, params.promptTag)
+func createURL(portkey config.Portkey, args toolArgs) string {
+	endpointID := args.promptID
+	if args.promptTag != "" {
+		endpointID = fmt.Sprintf("%s@%s", args.promptID, args.promptTag)
 	}
 
 	return fmt.Sprintf("%s/prompts/%s/render", portkey.BaseURL, endpointID)
 }
 
-func createReqBody(params toolParams) ([]byte, error) {
+func createReqBody(args toolArgs) ([]byte, error) {
 	//nolint:exhaustruct
 	req := Request{
-		Variables: params.variables,
+		Variables: args.variables,
 	}
 	if req.Variables == nil {
 		// The API expects variables key even if empty.

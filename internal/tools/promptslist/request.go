@@ -2,7 +2,7 @@ package promptslist
 
 // Request represents the request body for the Portkey Prompts List API.
 type Request struct {
-	// Optional parameters
+	// Optional arguments
 	CollectionID string `json:"collection_id,omitempty"`
 	WorkspaceID  string `json:"workspace_id,omitempty"`
 	CurrentPage  *int   `json:"current_page,omitempty"`

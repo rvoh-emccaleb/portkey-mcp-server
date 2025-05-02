@@ -20,14 +20,14 @@ import (
 const (
 	toolName = "prompts_list"
 
-	// Tool parameters.
-	toolParamCollectionID = "collection_id"
-	toolParamWorkspaceID  = "workspace_id"
-	toolParamCurrentPage  = "current_page"
-	toolParamPageSize     = "page_size"
-	toolParamSearch       = "search"
+	// Tool arguments.
+	toolArgCollectionID = "collection_id"
+	toolArgWorkspaceID  = "workspace_id"
+	toolArgCurrentPage  = "current_page"
+	toolArgPageSize     = "page_size"
+	toolArgSearch       = "search"
 
-	// Portkey API parameters.
+	// Portkey API query parameters.
 	apiParamCollectionID = "collection_id"
 	apiParamWorkspaceID  = "workspace_id"
 	apiParamCurrentPage  = "current_page"
@@ -38,11 +38,11 @@ const (
 )
 
 var (
-	ErrInvalidPageSize    = fmt.Errorf("%s must be a positive integer", toolParamPageSize)
-	ErrInvalidCurrentPage = fmt.Errorf("%s must be a positive integer", toolParamCurrentPage)
+	ErrInvalidPageSize    = fmt.Errorf("%s must be a positive integer", toolArgPageSize)
+	ErrInvalidCurrentPage = fmt.Errorf("%s must be a positive integer", toolArgCurrentPage)
 )
 
-type toolParams struct {
+type toolArgs struct {
 	collectionID string
 	workspaceID  string
 	currentPage  *int
@@ -51,7 +51,7 @@ type toolParams struct {
 }
 
 func NewTool(portkeyCfg config.Portkey, toolCfg config.BaseTool) tools.Tuple {
-	description := "List all prompts in your Portkey account after applying the provided parameters. This tool allows " +
+	description := "List all prompts in your Portkey account after applying the provided arguments. This tool allows " +
 		"you to retrieve prompt metadata like prompt ID, prompt slug, name, collection, model, and status. " +
 		"You can filter by various parameters and paginate results. There is the ability to search by " +
 		"approximate name and slug matches."
@@ -63,19 +63,19 @@ func NewTool(portkeyCfg config.Portkey, toolCfg config.BaseTool) tools.Tuple {
 	listPromptsTool := mcp.NewTool(
 		toolName,
 		mcp.WithDescription(description),
-		mcp.WithString(toolParamCollectionID,
+		mcp.WithString(toolArgCollectionID,
 			mcp.Description("Optional. Filter prompts by collection ID."),
 		),
-		mcp.WithString(toolParamWorkspaceID,
+		mcp.WithString(toolArgWorkspaceID,
 			mcp.Description("Optional. Filter prompts by workspace ID."),
 		),
-		mcp.WithNumber(toolParamCurrentPage,
+		mcp.WithNumber(toolArgCurrentPage,
 			mcp.Description("Optional. Page number for pagination. Starts at 1."),
 		),
-		mcp.WithNumber(toolParamPageSize,
+		mcp.WithNumber(toolArgPageSize,
 			mcp.Description("Optional. Number of results per page."),
 		),
-		mcp.WithString(toolParamSearch,
+		mcp.WithString(toolArgSearch,
 			mcp.Description("Optional. Search term to filter prompts by name or slug."),
 		),
 	)
@@ -92,14 +92,14 @@ func promptsListHandler(portkey config.Portkey) server.ToolHandlerFunc {
 	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		lgr := middleware.GetLogger(ctx)
 
-		params, err := getToolParams(request)
+		args, err := getToolArguments(request)
 		if err != nil {
-			lgr.Info("failed to get user-provided tool params from mcp request", "error", err)
+			lgr.Info("failed to get user-provided tool arguments from mcp request", "error", err)
 
 			return mcp.NewToolResultErrorFromErr("invalid input", err), nil
 		}
 
-		apiURL := createURL(portkey, params)
+		apiURL := createURL(portkey, args)
 
 		httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, apiURL, nil)
 		if err != nil {
@@ -141,55 +141,55 @@ func promptsListHandler(portkey config.Portkey) server.ToolHandlerFunc {
 	}
 }
 
-func getToolParams(request mcp.CallToolRequest) (toolParams, error) {
+func getToolArguments(request mcp.CallToolRequest) (toolArgs, error) {
 	//nolint:exhaustruct
-	params := toolParams{
-		collectionID: mcp.ParseString(request, toolParamCollectionID, ""),
-		workspaceID:  mcp.ParseString(request, toolParamWorkspaceID, ""),
-		search:       mcp.ParseString(request, toolParamSearch, ""),
+	args := toolArgs{
+		collectionID: mcp.ParseString(request, toolArgCollectionID, ""),
+		workspaceID:  mcp.ParseString(request, toolArgWorkspaceID, ""),
+		search:       mcp.ParseString(request, toolArgSearch, ""),
 	}
 
-	// Handle optional integer parameters
-	currentPage := mcp.ParseInt(request, toolParamCurrentPage, 0)
+	// Handle optional integer arguments.
+	currentPage := mcp.ParseInt(request, toolArgCurrentPage, 0)
 	if currentPage > 0 {
-		params.currentPage = &currentPage
+		args.currentPage = &currentPage
 	} else if currentPage < 0 {
-		return toolParams{}, ErrInvalidCurrentPage
+		return toolArgs{}, ErrInvalidCurrentPage
 	}
 
-	pageSize := mcp.ParseInt(request, toolParamPageSize, 0)
+	pageSize := mcp.ParseInt(request, toolArgPageSize, 0)
 	if pageSize > 0 {
-		params.pageSize = &pageSize
+		args.pageSize = &pageSize
 	} else if pageSize < 0 {
-		return toolParams{}, ErrInvalidPageSize
+		return toolArgs{}, ErrInvalidPageSize
 	}
 
-	return params, nil
+	return args, nil
 }
 
-func createURL(portkey config.Portkey, params toolParams) string {
+func createURL(portkey config.Portkey, args toolArgs) string {
 	baseURL := portkey.BaseURL + "/prompts"
 
-	// Add query parameters
+	// Add query parameters.
 	values := url.Values{}
-	if params.collectionID != "" {
-		values.Add(apiParamCollectionID, params.collectionID)
+	if args.collectionID != "" {
+		values.Add(apiParamCollectionID, args.collectionID)
 	}
 
-	if params.workspaceID != "" {
-		values.Add(apiParamWorkspaceID, params.workspaceID)
+	if args.workspaceID != "" {
+		values.Add(apiParamWorkspaceID, args.workspaceID)
 	}
 
-	if params.currentPage != nil {
-		values.Add(apiParamCurrentPage, strconv.Itoa(*params.currentPage))
+	if args.currentPage != nil {
+		values.Add(apiParamCurrentPage, strconv.Itoa(*args.currentPage))
 	}
 
-	if params.pageSize != nil {
-		values.Add(apiParamPageSize, strconv.Itoa(*params.pageSize))
+	if args.pageSize != nil {
+		values.Add(apiParamPageSize, strconv.Itoa(*args.pageSize))
 	}
 
-	if params.search != "" {
-		values.Add(apiParamSearch, params.search)
+	if args.search != "" {
+		values.Add(apiParamSearch, args.search)
 	}
 
 	if len(values) > 0 {
