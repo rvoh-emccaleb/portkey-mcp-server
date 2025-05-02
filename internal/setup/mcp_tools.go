@@ -14,9 +14,14 @@ import (
 )
 
 func MCPTools(cfg config.App, mcpServer *server.MCPServer, downstreamTools ...tools.Tuple) error {
+	httpClient, err := cfg.Portkey.Client.FromConfig()
+	if err != nil {
+		return fmt.Errorf("failed to create http client from config: %w", err)
+	}
+
 	middlewares := []middleware.Middleware{
 		middleware.WithToolCallLogging,
-		middleware.WithHTTPClient(middleware.DefaultHTTPClient()),
+		middleware.WithHTTPClient(httpClient),
 	}
 
 	allTools := []tools.Tuple{

@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/rvoh-emccaleb/portkey-mcp-server/internal/config"
 	"github.com/rvoh-emccaleb/portkey-mcp-server/internal/types"
@@ -21,8 +22,13 @@ func TestPortkeyConfigMasking(t *testing.T) {
 	)
 
 	cfg := config.Portkey{
-		BaseURL: "https://api.portkey.example.com",
 		APIKey:  types.MaskedString(apiKey),
+		BaseURL: "https://api.portkey.example.com",
+		Client: config.HTTPClient{
+			CustomCACertPath:   "/foo/bar",
+			InsecureSkipVerify: false,
+			Timeout:            10 * time.Second,
+		},
 	}
 
 	// Test string representation via fmt - should be masked
