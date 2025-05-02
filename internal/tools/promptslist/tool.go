@@ -53,7 +53,8 @@ type toolParams struct {
 func NewTool(portkeyCfg config.Portkey, toolCfg config.BaseTool) tools.Tuple {
 	description := "List all prompts in your Portkey account after applying the provided parameters. This tool allows " +
 		"you to retrieve prompt metadata like prompt ID, prompt slug, name, collection, model, and status. " +
-		"You can filter by various parameters and paginate results. There is the ability to search by approximate slug matches."
+		"You can filter by various parameters and paginate results. There is the ability to search by " +
+		"approximate slug matches."
 
 	if toolCfg.Description != "" {
 		description = toolCfg.Description
