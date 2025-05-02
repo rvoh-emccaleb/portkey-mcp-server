@@ -10,20 +10,25 @@ import (
 	"github.com/rvoh-emccaleb/portkey-mcp-server/internal/tools"
 	"github.com/rvoh-emccaleb/portkey-mcp-server/internal/tools/middleware"
 	"github.com/rvoh-emccaleb/portkey-mcp-server/internal/tools/promptrender"
+	"github.com/rvoh-emccaleb/portkey-mcp-server/internal/tools/promptslist"
 )
 
 func MCPTools(cfg config.App, mcpServer *server.MCPServer, downstreamTools ...tools.Tuple) error {
 	middlewares := []middleware.Middleware{
 		middleware.WithToolCallLogging,
+		middleware.WithHTTPClient(middleware.DefaultHTTPClient()),
 	}
 
-	ts := []tools.Tuple{
+	allTools := []tools.Tuple{
 		promptrender.NewTool(cfg.Portkey, cfg.Tools.PromptRender),
+		promptslist.NewTool(cfg.Portkey, cfg.Tools.PromptsList),
 	}
 
-	ts = append(ts, downstreamTools...)
+	allTools = append(allTools, downstreamTools...)
 
-	for _, t := range ts {
+	enabledTools := getEnabledTools(allTools)
+
+	for _, t := range enabledTools {
 		slog.Info(fmt.Sprintf("registering %s tool", t.Tool.Name))
 
 		mcpServer.AddTool(
@@ -33,6 +38,19 @@ func MCPTools(cfg config.App, mcpServer *server.MCPServer, downstreamTools ...to
 	}
 
 	return nil
+}
+
+// getEnabledTools filters out disabled tools from the provided list.
+func getEnabledTools(allTools []tools.Tuple) []tools.Tuple {
+	enabledTools := make([]tools.Tuple, 0, len(allTools))
+
+	for _, tool := range allTools {
+		if tool.Enabled {
+			enabledTools = append(enabledTools, tool)
+		}
+	}
+
+	return enabledTools
 }
 
 // addMiddleware applies the middleware in reverse order, to ensure that a request flows through middleware in the order

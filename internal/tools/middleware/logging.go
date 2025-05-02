@@ -9,8 +9,6 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
-type ctxKey string
-
 const loggerKey = ctxKey("logger")
 
 // GetLogger retrieves the request-scoped logger from the context.

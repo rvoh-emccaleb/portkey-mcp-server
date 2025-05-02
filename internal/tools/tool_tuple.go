@@ -10,4 +10,5 @@ import (
 type Tuple struct {
 	Tool    *mcp.Tool
 	Handler server.ToolHandlerFunc
+	Enabled bool
 }

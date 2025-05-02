@@ -20,6 +20,7 @@ A Model Context Protocol (MCP) server implementation for Portkey. This applicati
 ## Supported MCP Features
 ### Tools
 - [`prompt_render`](https://portkey.ai/docs/api-reference/inference-api/prompts/render)
+- [`prompts_list`](https://github.com/Portkey-AI/openapi/blob/master/openapi.yaml)
 
 ## Installation
 

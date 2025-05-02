@@ -3,9 +3,9 @@ package config
 import "fmt"
 
 type EnvVars struct {
-	LogLevel     LogLevel `default:"info" envconfig:"LOG_LEVEL"`
-	Portkey      Portkey
-	Tools        Tools
+	LogLevel     LogLevel      `default:"info"            envconfig:"LOG_LEVEL"`
+	Portkey      Portkey       `envconfig:"PORTKEY"`
+	Tools        Tools         `envconfig:"TOOLS"`
 	Transport    TransportType `default:"stdio"           envconfig:"TRANSPORT"`
 	TransportSSE SSETransport  `envconfig:"TRANSPORT_SSE"`
 }

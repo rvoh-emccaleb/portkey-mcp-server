@@ -4,8 +4,21 @@ BINARY_NAME ?= portkey-mcp-server
 .PHONY: build
 build:
 	@echo "Building $(BINARY_NAME)..."
-	@GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags "-X main.appVersion=$(shell git rev-parse --short HEAD)" -o $(BINARY_NAME) $(MAIN_PACKAGE)
+	@CGO_ENABLED=0 go build -ldflags "-X main.appVersion=$(shell git rev-parse --short HEAD)" -o $(BINARY_NAME) $(MAIN_PACKAGE)
 	@echo "Build complete: $(BINARY_NAME)"
+
+# Cross-compilation targets
+.PHONY: build-linux-amd64
+build-linux-amd64:
+	@echo "Building $(BINARY_NAME)-linux-amd64..."
+	@GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags "-X main.appVersion=$(shell git rev-parse --short HEAD)" -o $(BINARY_NAME)-linux-amd64 $(MAIN_PACKAGE)
+	@echo "Linux/amd64 build complete: $(BINARY_NAME)-linux-amd64"
+
+.PHONY: build-darwin-arm64
+build-darwin-arm64:
+	@echo "Building $(BINARY_NAME)-darwin-arm64..."
+	@GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -ldflags "-X main.appVersion=$(shell git rev-parse --short HEAD)" -o $(BINARY_NAME)-darwin-arm64 $(MAIN_PACKAGE)
+	@echo "macOS/arm64 build complete: $(BINARY_NAME)-darwin-arm64"
 
 IMAGE_NAME ?= portkey-mcp-server
 IMAGE_TAG ?= $(shell git rev-parse --short HEAD)

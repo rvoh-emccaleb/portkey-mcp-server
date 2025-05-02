@@ -1,1 +1,5 @@
+# Secret management
 .env
+
+# Local Cursor MCP config
+.cursor/mcp.json
