@@ -9,8 +9,8 @@ const (
 )
 
 type Tools struct {
-	PromptRender PromptRenderTool `envconfig:"PROMPT_RENDER"`
-	PromptsList  PromptsListTool  `envconfig:"PROMPTS_LIST"`
+	PromptRender BaseTool `envconfig:"PROMPT_RENDER"`
+	PromptsList  BaseTool `envconfig:"PROMPTS_LIST"`
 }
 
 func (t *Tools) Validate() error {

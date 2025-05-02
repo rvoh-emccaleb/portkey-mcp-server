@@ -38,7 +38,7 @@ type toolParams struct {
 	variables map[string]string
 }
 
-func NewTool(portkeyCfg config.Portkey, toolCfg config.PromptRenderTool) tools.Tuple {
+func NewTool(portkeyCfg config.Portkey, toolCfg config.BaseTool) tools.Tuple {
 	description := "Render a Portkey prompt template by prompt slug and return the raw payload. This is a way to obtain " +
 		"a prompt with optional variables substituted in. You can select specific versions of a prompt, or use the currently " +
 		"published version."
