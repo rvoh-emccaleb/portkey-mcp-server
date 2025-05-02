@@ -7,9 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
-	"time"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -26,9 +24,7 @@ const (
 	toolParamPromptTag = "prompt_tag"
 	toolParamVariables = "variables"
 
-	defaultClientTimeout = 30 * time.Second
-
-	errInternalErrorText = "internal error while processing request"
+	errTextInternalError = "internal error while processing request"
 )
 
 var (
@@ -43,9 +39,9 @@ type toolParams struct {
 }
 
 func NewTool(portkeyCfg config.Portkey, toolCfg config.PromptRenderTool) tools.Tuple {
-	description := "Render a Portkey prompt template and return the raw payload. This is a way to obtain a prompt with " +
-		"optional variables substituted in. You can select specific versions of a prompt, or use the currently published " +
-		"version."
+	description := "Render a Portkey prompt template by prompt slug and return the raw payload. This is a way to obtain " +
+		"a prompt with optional variables substituted in. You can select specific versions of a prompt, or use the currently " +
+		"published version."
 
 	if toolCfg.Description != "" {
 		description = toolCfg.Description
@@ -56,7 +52,8 @@ func NewTool(portkeyCfg config.Portkey, toolCfg config.PromptRenderTool) tools.T
 		mcp.WithDescription(description),
 		mcp.WithString(toolParamPromptID,
 			mcp.Required(),
-			mcp.Description("The ID of the Portkey prompt to render."),
+			mcp.Description("The ID of the Portkey prompt to render. Specifically, this is the 'slug' of the prompt, if you "+
+				"have used search tools to find this prompt."),
 		),
 		mcp.WithString(toolParamPromptTag,
 			mcp.Description("Specific prompt version or label (e.g. '12', 'latest'). If omitted the published version is used."),
@@ -70,6 +67,7 @@ func NewTool(portkeyCfg config.Portkey, toolCfg config.PromptRenderTool) tools.T
 	return tools.Tuple{
 		Tool:    &promptRenderTool,
 		Handler: promptRenderHandler(portkeyCfg),
+		Enabled: toolCfg.Enabled,
 	}
 }
 
@@ -93,27 +91,20 @@ func promptRenderHandler(portkey config.Portkey) server.ToolHandlerFunc {
 		if err != nil {
 			lgr.Error("failed to create request body", "error", err)
 
-			return mcp.NewToolResultError(errInternalErrorText), nil
+			return mcp.NewToolResultError(errTextInternalError), nil
 		}
 
 		httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
 		if err != nil {
 			lgr.Error("failed to create http request", "error", err)
 
-			return mcp.NewToolResultError(errInternalErrorText), nil
+			return mcp.NewToolResultError(errTextInternalError), nil
 		}
 
 		httpReq.Header.Set("Content-Type", "application/json")
 		httpReq.Header.Set("X-Portkey-Api-Key", string(portkey.APIKey))
 
-		client := &http.Client{
-			Timeout:       defaultClientTimeout, // context timeout is used, if exists, else this
-			Transport:     http.DefaultTransport,
-			CheckRedirect: nil,
-			Jar:           nil,
-		}
-
-		resp, err := client.Do(httpReq)
+		resp, err := tools.MakePortkeyAPIRequest(ctx, httpReq)
 		if err != nil {
 			lgr.Error("failed to call portkey api", "error", err)
 
@@ -129,7 +120,7 @@ func promptRenderHandler(portkey config.Portkey) server.ToolHandlerFunc {
 		}
 
 		if resp.StatusCode != http.StatusOK {
-			return handleErrorStatusCodes(resp, respBody, params, lgr), nil
+			return tools.HandleHTTPError(resp, respBody, lgr), nil
 		}
 
 		var portkeyResp Response
@@ -205,65 +196,4 @@ func createReqBody(params toolParams) ([]byte, error) {
 	}
 
 	return data, nil
-}
-
-func handleErrorStatusCodes(
-	resp *http.Response,
-	respBody []byte,
-	params toolParams,
-	lgr *slog.Logger,
-) *mcp.CallToolResult {
-	switch {
-	case resp.StatusCode == http.StatusUnauthorized:
-		lgr.Error("unauthorized access to portkey service",
-			"status_code", resp.StatusCode,
-			"response", string(respBody),
-		)
-
-		return mcp.NewToolResultError("unauthorized access to portkey service")
-
-	case resp.StatusCode == http.StatusForbidden:
-		lgr.Error("forbidden access to portkey service",
-			"status_code", resp.StatusCode,
-			"response", string(respBody),
-		)
-
-		return mcp.NewToolResultError("forbidden access to portkey service")
-
-	case resp.StatusCode == http.StatusNotFound:
-		lgr.Info("prompt not found",
-			"status_code", resp.StatusCode,
-			"response", string(respBody),
-			"prompt_id", params.promptID,
-			"prompt_tag", params.promptTag,
-		)
-
-		return mcp.NewToolResultError("requested prompt not found")
-
-	case resp.StatusCode >= http.StatusBadRequest && resp.StatusCode < http.StatusInternalServerError:
-		lgr.Info("invalid request to portkey service",
-			"status_code", resp.StatusCode,
-			"response", string(respBody),
-			"prompt_id", params.promptID,
-			"prompt_tag", params.promptTag,
-		)
-
-		return mcp.NewToolResultError("invalid request to portkey service")
-
-	case resp.StatusCode >= http.StatusInternalServerError:
-		lgr.Error("portkey service error",
-			"status_code", resp.StatusCode,
-			"response", string(respBody),
-		)
-
-		return mcp.NewToolResultError("portkey service error")
-
-	default:
-		lgr.Error("unexpected status code from portkey service",
-			"status_code", resp.StatusCode,
-			"response", string(respBody),
-		)
-
-		return mcp.NewToolResultError("unexpected response from portkey service")
-	}
 }

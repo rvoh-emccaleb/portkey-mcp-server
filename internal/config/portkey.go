@@ -12,8 +12,8 @@ var (
 )
 
 type Portkey struct {
-	APIKey  types.MaskedString `envconfig:"PORTKEY_API_KEY"         json:"api_key"               required:"true"`
-	BaseURL string             `default:"https://api.portkey.ai/v1" envconfig:"PORTKEY_BASE_URL" json:"base_url" required:"true"` //nolint:lll
+	APIKey  types.MaskedString `envconfig:"API_KEY"                 json:"api_key"       required:"true"`
+	BaseURL string             `default:"https://api.portkey.ai/v1" envconfig:"BASE_URL" json:"base_url" required:"true"` //nolint:lll
 }
 
 func (cfg *Portkey) Validate() error {
