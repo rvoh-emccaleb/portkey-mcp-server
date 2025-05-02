@@ -10,7 +10,8 @@ type Response struct {
 type RenderData struct {
 	Messages []Message `json:"messages"`
 	Model    string    `json:"model"`
-	// Optional parameters
+
+	// Optional fields
 	FrequencyPenalty  *float64        `json:"frequency_penalty,omitempty"`
 	LogitBias         map[string]int  `json:"logit_bias,omitempty"`
 	LogProbs          bool            `json:"logprobs,omitempty"`
@@ -20,17 +21,17 @@ type RenderData struct {
 	PresencePenalty   *float64        `json:"presence_penalty,omitempty"`
 	ResponseFormat    *ResponseFormat `json:"response_format,omitempty"`
 	Seed              *int64          `json:"seed,omitempty"`
-	Stop              interface{}     `json:"stop,omitempty"` // Can be string or []string
+	Stop              any             `json:"stop,omitempty"` // Can be string or []string
 	Stream            bool            `json:"stream,omitempty"`
 	StreamOptions     *StreamOptions  `json:"stream_options,omitempty"`
 	Thinking          *ThinkingConfig `json:"thinking,omitempty"`
 	Temperature       *float64        `json:"temperature,omitempty"`
 	TopP              *float64        `json:"top_p,omitempty"`
 	Tools             []Tool          `json:"tools,omitempty"`
-	ToolChoice        interface{}     `json:"tool_choice,omitempty"` // Can be string or object
+	ToolChoice        any             `json:"tool_choice,omitempty"` // Can be string or object
 	ParallelToolCalls bool            `json:"parallel_tool_calls,omitempty"`
 	User              string          `json:"user,omitempty"`
-	FunctionCall      interface{}     `json:"function_call,omitempty"` // Deprecated
+	FunctionCall      any             `json:"function_call,omitempty"` // Deprecated
 	Functions         []Function      `json:"functions,omitempty"`     // Deprecated
 }
 
@@ -59,7 +60,7 @@ type Tool struct {
 }
 
 type Function struct {
-	Name        string                 `json:"name"`
-	Description string                 `json:"description,omitempty"`
-	Parameters  map[string]interface{} `json:"parameters,omitempty"`
+	Name        string         `json:"name"`
+	Description string         `json:"description,omitempty"`
+	Parameters  map[string]any `json:"parameters,omitempty"`
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/rvoh-emccaleb/portkey-mcp-server/internal/config"
 	"github.com/rvoh-emccaleb/portkey-mcp-server/internal/tools"
 	"github.com/rvoh-emccaleb/portkey-mcp-server/internal/tools/middleware"
+	"github.com/rvoh-emccaleb/portkey-mcp-server/internal/tools/promptcreate"
 	"github.com/rvoh-emccaleb/portkey-mcp-server/internal/tools/promptrender"
 	"github.com/rvoh-emccaleb/portkey-mcp-server/internal/tools/promptslist"
 )
@@ -25,6 +26,7 @@ func MCPTools(cfg config.App, mcpServer *server.MCPServer, downstreamTools ...to
 	}
 
 	allTools := []tools.Tuple{
+		promptcreate.NewTool(cfg.Portkey, cfg.Tools.PromptCreate),
 		promptrender.NewTool(cfg.Portkey, cfg.Tools.PromptRender),
 		promptslist.NewTool(cfg.Portkey, cfg.Tools.PromptsList),
 	}
